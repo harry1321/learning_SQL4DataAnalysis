@@ -1,0 +1,120 @@
+SELECT channel, AVG(total)
+FROM
+(SELECT date(w.occurred_at) AS Date, w.channel, COUNT(*) total
+FROM web_events w
+GROUP BY 1, 2)sub
+GROUP BY 1
+ORDER BY 2 DESC;
+
+SELECT 
+    strftime('%Y%m',o.occurred_at) AS Time, 
+    AVG(o.standard_qty),
+    AVG(o.gloss_qty),
+    AVG(o.poster_qty)
+FROM orders o
+WHERE strftime('%Y%m',o.occurred_at) = 
+(SELECT strftime('%Y%m',MIN(o.occurred_at)) min_month
+FROM orders o)
+GROUP BY 1;
+
+SELECT 
+    sale_rep, region, MAX(sales)
+    FROM
+    (SELECT s.name sale_rep, r.name region, MAX(o.total_amt_usd) sales
+        FROM orders o
+        JOIN accounts a ON a.id = o.account_id
+        JOIN sales_reps s ON s.id = a.sales_rep_id
+        JOIN region r ON r.id = s.region_id
+        GROUP BY 1, 2)sub
+    GROUP BY 2
+    ORDER BY 1;
+
+SELECT 
+    r.name region, COUNT(*) total_orders
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    JOIN region r ON r.id = s.region_id
+    GROUP BY 1
+    HAVING SUM(o.total_amt_usd) =
+        (SELECT MAX(total_sales)
+            FROM
+            (SELECT r.name, SUM(o.total_amt_usd) total_sales
+                FROM orders o
+                JOIN accounts a ON a.id = o.account_id
+                JOIN sales_reps s ON s.id = a.sales_rep_id
+                JOIN region r ON r.id = s.region_id
+                GROUP BY 1
+            )sub
+        );
+
+
+SELECT COUNT(*)
+    FROM
+    (SELECT a.name, SUM(o.total)
+        FROM accounts a
+        JOIN orders o ON o.account_id = a.id
+        GROUP BY 1
+        HAVING SUM(o.total) > 
+                            (SELECT total
+                                FROM
+                                (SELECT a.name acc_name, SUM(o.standard_qty) total_std, SUM(o.total) total
+                                    FROM accounts a
+                                    JOIN orders o ON o.account_id = a.id
+                                    GROUP BY 1
+                                    ORDER BY 2 DESC
+                                    LIMIT 1
+                                )sub
+                            )
+    )sub;
+
+SELECT w.channel, COUNT(*) events
+    FROM web_events w
+    JOIN accounts a ON a.id = w.account_id
+    WHERE a.name =
+    (SELECT acc_name
+        FROM
+        (SELECT a.name acc_name, SUM(o.total_amt_usd) total_sales
+            FROM accounts a
+            JOIN orders o ON o.account_id = a.id
+            GROUP BY 1
+            ORDER BY 2 DESC
+            LIMIT 1
+        )sub
+    )
+    GROUP BY 1
+    ORDER BY events DESC;
+
+SELECT AVG(total_sales) avg_of_top10
+ FROM
+ (SELECT a.name acc_name, SUM(o.total_amt_usd) total_sales
+     FROM accounts a
+     JOIN orders o ON o.account_id = a.id
+     GROUP BY 1
+     ORDER BY 2 DESC
+     LIMIT 10)top_ten;
+
+SELECT AVG(company_avg)
+    FROM
+    (SELECT o.account_id target, AVG(o.total_amt_usd) company_avg
+        FROM orders o
+        GROUP BY 1
+        HAVING AVG(o.total_amt_usd) >
+        (SELECT AVG(o.total_amt_usd) avg_sales
+             FROM orders o)
+    );
+
+WITH most AS(
+    SELECT a.name name, SUM(o.total_amt_usd)
+    FROM accounts a
+    JOIN orders o ON o.account_id = a.id
+    GROUP BY 1
+    ORDER BY 2 DESC
+    LIMIT 1
+)
+SELECT w.channel, COUNT(*)
+FROM web_events w
+JOIN accounts a ON a.id = w.account_id
+WHERE a.name = (SELECT most.name FROM most)
+GROUP BY 1
+ORDER BY 2 DESC;

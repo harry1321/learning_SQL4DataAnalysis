@@ -1,0 +1,90 @@
+SELECT DISTINCT COUNT(substr(website,-3))
+FROM accounts a;
+
+SELECT substr(name,1,1) type, COUNT(*)
+FROM accounts a
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+WITH g AS
+(SELECT a.name,
+    CASE 
+    WHEN a.name REGEXP('^[0-9]') THEN 'numbers'
+    WHEN a.name REGEXP('^[a-zA-Z]') THEN 'letters'
+    ELSE 'others'
+    END AS 'name_group'
+FROM accounts a)
+
+SELECT name_group, COUNT(*) AS num
+FROM g
+GROUP BY 1;
+
+WITH g AS
+(SELECT a.name,
+    CASE 
+    WHEN a.name REGEXP('^[aeiouAEIOU]') THEN 'vowels'
+    ELSE 'consants'
+    END AS 'name_group'
+FROM accounts a)
+
+SELECT name_group, COUNT(*) AS num
+FROM g
+GROUP BY 1;
+
+SELECT
+    a.primary_poc,
+    substr(a.primary_poc, 1, instr(a.primary_poc,' ')-1) AS first_name,
+    substr(a.primary_poc, instr(a.primary_poc,' ')+1) AS last_name
+FROM accounts a;
+
+SELECT
+    s.name,
+    substr(s.name, 1, instr(s.name,' ')-1) AS first_name,
+    substr(s.name, instr(s.name,' ')+1) AS last_name
+FROM sales_reps s;
+
+WITH split AS (
+    SELECT
+        a.name AS company,
+        substr(a.primary_poc,1,instr(a.primary_poc,' ')-1) AS first_name,
+        substr(a.primary_poc,instr(a.primary_poc,' ')+1) AS last_name
+    FROM accounts a)
+SELECT 
+    first_name ||'.'||last_name||'@'||LOWER(company)||'.com' AS email_address
+FROM split;
+
+WITH split AS (
+    SELECT
+        a.name AS company,
+        substr(a.primary_poc,1,instr(a.primary_poc,' ')-1) AS first_name,
+        substr(a.primary_poc,instr(a.primary_poc,' ')+1) AS last_name
+    FROM accounts a)
+SELECT 
+    first_name ||'.'||last_name||'@'||REPLACE(LOWER(company),' ','')||'.com' AS email_address
+FROM split;
+
+WITH split AS (
+    SELECT
+        UPPER(REPLACE(a.name,' ','')) AS company,
+        LOWER(substr(a.primary_poc,1,instr(a.primary_poc,' ')-1)) AS first_name,
+        LOWER(substr(a.primary_poc,instr(a.primary_poc,' ')+1)) AS last_name
+    FROM accounts a),
+code AS (
+    SELECT
+        company,
+        substr(first_name,1,1) AS c1,
+        substr(first_name,-1,1) AS c2,
+        substr(last_name,1,1) AS c3,
+        substr(last_name,-1,1) AS c4,
+        LENGTH(first_name) AS len1,
+        LENGTH(last_name) AS len2
+    FROM split)
+SELECT c1||c2||c3||c4||len1||len2||company AS password
+FROM code;
+
+SELECT *
+FROM accounts a
+LEFT JOIN orders o
+ON a.id = o.account_id
+WHERE o.total IS NULL; 

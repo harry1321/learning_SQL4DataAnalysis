@@ -1,0 +1,276 @@
+SELECT 
+    SUM(o.poster_qty) AS total_poster_sales, 
+    SUM(o.standard_qty) AS total_standard_sales,
+    SUM(o.total_amt_usd) AS total_sales,
+    SUM(standard_amt_usd)/SUM(standard_qty) AS standard_price_per_unit
+    FROM orders o;
+
+SELECT
+    (o.standard_amt_usd+o.gloss_amt_usd) AS total_standard_gloss
+    FROM orders o;
+    
+SELECT
+    MIN(o.occurred_at) AS earliest_order,
+    o.occurred_at
+    FROM orders o
+    ORDER BY o.occurred_at
+    LIMIT 1;
+
+SELECT
+    MIN(w.occurred_at) AS earliest_event,
+    w.occurred_at
+    FROM web_events w
+    ORDER BY w.occurred_at
+    LIMIT 1;
+
+SELECT
+    AVG(o.standard_amt_usd) AS avg_amount_standarad,
+    AVG(o.gloss_amt_usd) AS avg_amount_gloss,
+    AVG(o.poster_amt_usd) AS avg_amount_poster,
+    AVG(o.standard_qty) AS avg_aty_standard,
+    AVG(o.gloss_qty) AS avg_aty_gloss,
+    AVG(o.poster_qty) AS avg_aty_poster
+    FROM orders o;
+
+SELECT *
+FROM (SELECT total_amt_usd
+         FROM orders
+         ORDER BY total_amt_usd
+         LIMIT 3457) AS Table1
+ORDER BY total_amt_usd DESC
+LIMIT 2;
+
+SELECT o.occurred_at, a.name
+    FROM accounts a
+    JOIN orders o ON o.account_id = a.id
+    ORDER BY o.occurred_at
+    LIMIT 1;
+
+SELECT SUM(o.total_amt_usd) total_grand, a.name
+    FROM accounts a
+    JOIN orders o ON o.account_id = a.id
+    GROUP BY a.name
+    ORDER BY a.name;
+
+SELECT w.occurred_at, w.channel, a.name
+    FROM accounts a
+    JOIN web_events w ON w.account_id = a.id
+    ORDER BY w.occurred_at DESC
+    LIMIT 1;
+    
+SELECT COUNT(w.channel), w.channel
+    FROM web_events w
+    GROUP BY w.channel;
+    
+SELECT w.occurred_at, a.primary_poc
+    FROM accounts a
+    JOIN web_events w ON w.account_id = a.id
+    ORDER BY w.occurred_at
+    LIMIT 1;
+
+SELECT a.name Name, MIN(o.total_amt_usd) Total_USD
+    FROM accounts a
+    JOIN orders o ON o.account_id = a.id
+    GROUP BY Name
+    ORDER BY Total_USD;
+    
+SELECT r.name Region, COUNT(s.name) NUM
+    FROM sales_reps s
+    JOIN region r ON r.id = s.region_id
+    GROUP BY Region
+    ORDER BY NUM;
+    
+SELECT a.name, 
+    AVG(o.standard_qty) avg_standard_quantity,
+    AVG(o.gloss_qty) avvg_gloss_quantity,
+    AVG(o.poster_qty) avg_poster_quantity,
+    AVG(o.standard_amt_usd) avg_standard_spent,
+    AVG(o.gloss_amt_usd) avg_gloss_spent,
+    AVG(o.poster_amt_usd) avg_poster_spent
+    FROM accounts a
+    JOIN orders o ON o.account_id = a.id
+    GROUP BY a.name;
+
+SELECT s.name, w.channel, COUNT(w.channel) occurrence
+    FROM accounts a
+    JOIN web_events w ON w.account_id = a.id
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    GROUP BY s.name, w.channel
+    ORDER BY occurrence DESC;
+
+SELECT r.name region, w.channel, COUNT(w.channel) occurrence
+    FROM accounts a
+    JOIN web_events w ON w.account_id = a.id
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    JOIN region r ON r.id = s.region_id
+    GROUP BY region, w.channel
+    ORDER BY occurrence DESC;
+    
+SELECT a.name, r.name region
+    FROM accounts a
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    JOIN region r ON r.id = s.region_id
+    GROUP BY a.name;
+
+SELECT s.name sales_rep, a.name acc_name
+    FROM accounts a
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    JOIN region r ON r.id = s.region_id
+    GROUP BY a.name;
+    
+SELECT s.id, s.name, COUNT(*) num
+    FROM accounts a
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    GROUP BY s.id, s.name;
+
+SELECT s.name, COUNT(*) acc_num
+    FROM accounts a
+    JOIN sales_reps s ON s.id = a.sales_rep_id
+    GROUP BY s.name
+    HAVING acc_num > 5;
+    
+SELECT a.name, COUNT(*) order_num
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    GROUP BY o.account_id
+    HAVING order_num > 20;
+
+SELECT a.name, COUNT(*) order_num
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    GROUP BY o.account_id
+    HAVING order_num > 20
+    ORDER BY order_num DESC;
+
+SELECT a.name, SUM(o.total_amt_usd) order_usd
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    GROUP BY a.name
+    HAVING SUM(o.total_amt_usd) > 30000
+    ORDER BY order_usd;
+
+SELECT a.name, SUM(o.total_amt_usd) order_usd
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    GROUP BY a.name
+    HAVING SUM(o.total_amt_usd) < 1000
+    ORDER BY order_usd;
+
+SELECT a.name, SUM(o.total_amt_usd) order_usd
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id
+    GROUP BY a.name
+    ORDER BY order_usd DESC;
+
+SELECT a.id, a.name, w.channel, COUNT(*) use_of_channel
+    FROM accounts a
+    JOIN web_events w
+    ON a.id = w.account_id
+    GROUP BY a.id, a.name, w.channel
+    HAVING COUNT(*) > 6 AND w.channel = 'facebook'
+    ORDER BY use_of_channel;
+
+SELECT a.name, w.channel, COUNT(*) events_num
+    FROM web_events w
+    JOIN accounts a ON a.id = w.account_id
+    WHERE w.channel = 'facebook'
+    GROUP BY a.id
+    ORDER BY events_num DESC;
+
+SELECT a.name, w.channel, COUNT(*) events_num
+    FROM accounts a
+    JOIN web_events w ON a.id = w.account_id
+    GROUP BY a.name, w.channel
+    ORDER BY events_num DESC;
+
+SELECT SUM(o.total) Total, SUM(o.total_amt_usd) Total_Dollars, strftime('%Y', o.occurred_at) AS Year
+    FROM orders o
+    GROUP BY Year
+    ORDER BY Year;
+    
+SELECT SUM(o.total) Total, SUM(o.total_amt_usd) Total_Dollars, strftime('%m', o.occurred_at) AS Month
+    FROM orders o
+    GROUP BY Month
+    ORDER BY Month;
+
+SELECT SUM(o.gloss_amt_usd) Gloss_Dollars, strftime('%Y', o.occurred_at) AS Year
+    FROM orders o
+    JOIN accounts a ON a.id = o.account_id 
+    WHERE a.name = 'Walmart'
+    GROUP BY Year
+    ORDER BY Year;
+
+SELECT o.account_id,
+       o.total_amt_usd,
+    CASE 
+    WHEN o.total_amt_usd >= 3000 
+    THEN 'Large' ELSE 'Small'
+    END AS LoO
+    FROM orders o;
+
+SELECT 
+CASE 
+WHEN o.total >=2000 THEN 'At Least 2000' 
+WHEN o.total BETWEEN 1000 AND 1999 THEN 'Between 1000 and 2000' 
+WHEN o.total < 1000 THEN 'Less than 1000'
+END AS 'level_of_standard',
+COUNT(*) order_count
+FROM orders o
+GROUP BY 1;
+
+SELECT 
+    a.name, SUM(o.total_amt_usd) total_sales,
+    CASE WHEN SUM(o.total_amt_usd) > 200000 THEN '1st level'
+    WHEN SUM(o.total_amt_usd) BETWEEN 100000 AND 200000 THEN '2nd level'
+    WHEN SUM(o.total_amt_usd) < 100000 THEN '3rd level'
+    END AS sales_level
+FROM orders o
+JOIN accounts a ON a.id = o.account_id
+GROUP BY a.name
+ORDER BY total_sales DESC;
+
+SELECT 
+    o.account_id, SUM(o.total_amt_usd) total_sales,
+    CASE WHEN SUM(o.total_amt_usd) > 200000 THEN '1st level'
+    WHEN SUM(o.total_amt_usd) BETWEEN 100000 AND 200000 THEN '2nd level'
+    WHEN SUM(o.total_amt_usd) < 100000 THEN '3rd level'
+    END AS sales_level
+FROM orders o
+JOIN accounts a ON a.id = o.account_id
+WHERE o.occurred_at BETWEEN '2016-01-01' AND '2018-01-01'
+GROUP BY a.name
+ORDER BY total_sales DESC;
+
+SELECT 
+    s.name, COUNT(*) orders_num,
+    CASE WHEN COUNT(*) > 200 THEN 'Top'
+    ELSE 'not'
+    END AS 'sales_rep_level'
+FROM orders o
+JOIN accounts a ON o.account_id = a.id
+JOIN sales_reps s ON a.sales_rep_id = s.id
+GROUP BY s.name
+ORDER BY orders_num DESC;
+
+SELECT 
+    s.name, COUNT(*) orders_num, SUM(o.total_amt_usd) total_sales,
+    CASE WHEN COUNT(*) > 200 OR SUM(o.total_amt_usd) > 750000 THEN 'Top'
+    WHEN COUNT(*) BETWEEN 150 AND 200 OR SUM(o.total_amt_usd) BETWEEN 500000 AND 750000 THEN 'Mid'
+    ELSE 'Low'
+    END AS 'sales_rep_level'
+FROM orders o
+JOIN accounts a ON o.account_id = a.id
+JOIN sales_reps s ON a.sales_rep_id = s.id
+GROUP BY s.name
+ORDER BY total_sales DESC;
+SELECT s.name, COUNT(*), SUM(o.total_amt_usd) total_spent, 
+        CASE WHEN COUNT(*) > 200 OR SUM(o.total_amt_usd) > 750000 THEN 'top'
+        WHEN COUNT(*) > 150 OR SUM(o.total_amt_usd) > 500000 THEN 'middle'
+        ELSE 'low' END AS sales_rep_level
+FROM orders o
+JOIN accounts a
+ON o.account_id = a.id 
+JOIN sales_reps s
+ON s.id = a.sales_rep_id
+GROUP BY s.name
+ORDER BY 3 DESC;
